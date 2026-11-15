@@ -1,0 +1,87 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: famhealth-vault
+
+  # Database Configuration (PostgreSQL)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/famhealth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  # JPA & Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+
+  # Multipart File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 25MB
+      max-request-size: 30MB
+
+  # SMTP Mail Configuration
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:famhealth.notifications@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:your-smtp-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# Security & JWT Configuration
+application:
+  security:
+    jwt:
+      # 256-bit Base64-encoded secret key
+      secret-key: ${JWT_SECRET_KEY:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      # 24 Hours in milliseconds (86400000 ms)
+      expiration: 86400000
+      # 7 Days for Refresh Token
+      refresh-token:
+        expiration: 604800000
+
+# AWS S3 Storage Configuration
+aws:
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID:AKIAIOSFODNN7EXAMPLE}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY}
+  s3:
+    region: ${AWS_REGION:us-east-1}
+    bucket-name: ${AWS_S3_BUCKET_NAME:famhealth-vault-documents}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.famhealth.vault: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN

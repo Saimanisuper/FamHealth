@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Family Health Vault - Secure Medical Care</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            },
+            medical: {
+              blue: '#0284c7',
+              rose: '#e11d48',
+              amber: '#d97706'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for Vitals Telemetry -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Custom scrollbar and smooth transitions */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .tab-active {
+      color: #059669 !important;
+      border-bottom-color: #059669 !important;
+      font-weight: 600;
+    }
+    .mobile-tab-active {
+      color: #059669 !important;
+    }
+    .mobile-tab-active i, .mobile-tab-active svg {
+      stroke: #059669 !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans pb-20 md:pb-8">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none"></div>
+
+  <!-- AUTH SCREEN (Shown if not logged in) -->
+  <div id="auth-screen" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-slate-100">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shadow-inner">
+          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">Family Health Vault</h1>
+          <p class="text-xs text-slate-500 font-medium">Secure Care for Elderly Parents</p>
+        </div>
+      </div>
+
+      <div class="mb-5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+        <p class="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">Quick Demo Login (Select Role):</p>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="quickLogin('admin', 'Admin@12345')" class="text-xs py-2 px-2.5 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-slate-700 font-medium transition text-center shadow-sm">
+            <span class="block font-bold text-emerald-700">Admin</span>
+            <span class="text-[10px] text-slate-400">Full Access</span>
+          </button>
+          <button onclick="quickLogin('viewer', 'Viewer@12345')" class="text-xs py-2 px-2.5 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg text-slate-700 font-medium transition text-center shadow-sm">
+            <span class="block font-bold text-sky-700">Viewer</span>
+            <span class="text-[10px] text-slate-400">Family Member</span>
+          </button>
+          <button onclick="quickLogin('nurse', 'Nurse@12345')" class="text-xs py-2 px-2.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 rounded-lg text-slate-700 font-medium transition text-center shadow-sm">
+            <span class="block font-bold text-rose-700">Nurse</span>
+            <span class="text-[10px] text-slate-400">Vitals Only</span>
+          </button>
+        </div>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Username</label>
+          <input type="text" id="username-input" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white" placeholder="admin, viewer, or nurse">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+          <input type="password" id="password-input" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white" placeholder="••••••••">
+        </div>
+        <button type="submit" id="login-btn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+          <span>Authenticate with Vault</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOP HEADER (Desktop & Mobile) -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-sm">
+          <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900">FamHealth</span>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Vault</span>
+          </div>
+          <p class="hidden sm:block text-[11px] text-slate-400 font-medium -mt-0.5">Production Medical Hub</p>
+        </div>
+      </div>
+
+      <!-- Quick Role Switcher & User Profile -->
+      <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Role Indicator Pill -->
+        <div id="user-role-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="header-username">admin</span>
+          <span class="text-slate-400">|</span>
+          <span id="header-role" class="text-emerald-700 uppercase font-bold">ROLE_ADMIN</span>
+        </div>
+
+        <!-- Quick Switcher Dropdown / Buttons -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+          <button onclick="quickLogin('admin', 'Admin@12345')" class="px-2 py-1 rounded-lg font-semibold transition hover:bg-white text-slate-700" title="Switch to Admin">Admin</button>
+          <button onclick="quickLogin('nurse', 'Nurse@12345')" class="px-2 py-1 rounded-lg font-semibold transition hover:bg-white text-slate-700" title="Switch to Nurse">Nurse</button>
+          <button onclick="quickLogin('viewer', 'Viewer@12345')" class="px-2 py-1 rounded-lg font-semibold transition hover:bg-white text-slate-700" title="Switch to Viewer">Viewer</button>
+        </div>
+
+        <!-- Logout Button -->
+        <button onclick="logout()" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition" title="Logout">
+          <i data-lucide="log-out" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- DESKTOP NAVIGATION TABS -->
+    <div class="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="flex space-x-8 -mb-px">
+        <button onclick="switchTab('vitals')" id="tab-btn-vitals" class="tab-active py-3.5 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2 transition">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          <span>Vitals Telemetry</span>
+        </button>
+        <button onclick="switchTab('medications')" id="tab-btn-medications" class="py-3.5 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2 transition">
+          <i data-lucide="pill" class="w-4 h-4"></i>
+          <span>Medication Engine</span>
+          <span id="badge-low-pills" class="hidden px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">Refill</span>
+        </button>
+        <button onclick="switchTab('documents')" id="tab-btn-documents" class="py-3.5 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2 transition">
+          <i data-lucide="folder-lock" class="w-4 h-4"></i>
+          <span>Document Vault</span>
+        </button>
+        <button onclick="switchTab('share')" id="tab-btn-share" class="py-3.5 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 flex items-center gap-2 transition">
+          <i data-lucide="share-2" class="w-4 h-4"></i>
+          <span>Emergency 24h Share</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+
+    <!-- ROLE GUARD NOTICE (Visible when logged in as Nurse) -->
+    <div id="nurse-guard-banner" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+      <div class="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0 mt-0.5">
+        <i data-lucide="stethoscope" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-amber-900">Visiting Nurse Security Clearance Active</h3>
+        <p class="text-xs text-amber-700 mt-0.5">Per clinical compliance rules, your role (<span class="font-mono font-bold">ROLE_NURSE</span>) is authorized strictly to record new patient vitals logs. Document and medication management are restricted.</p>
+      </div>
+    </div>
+
+    <!-- PATIENT HERO CARD -->
+    <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-700 text-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-md">
+          <span id="patient-avatar-initials">RV</span>
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 id="patient-name-display" class="text-lg sm:text-xl font-extrabold text-slate-900">Robert Vance (Father)</h2>
+            <select id="patient-selector" onchange="selectPatientById(this.value)" class="hidden sm:inline-block text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+              <!-- Dynamically populated -->
+            </select>
+            <span id="patient-blood-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-100 text-rose-700 border border-rose-200">Blood: A+</span>
+            <span id="patient-age-badge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">74 Yrs</span>
+          </div>
+          <!-- Allergies Alert Badge -->
+          <div class="flex items-center gap-1.5 mt-1.5 text-xs text-rose-700 font-medium bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 w-fit">
+            <i data-lucide="alert-octagon" class="w-3.5 h-3.5 shrink-0 text-rose-600"></i>
+            <span>Known Allergies: <strong id="patient-allergies-display" class="font-bold">Aspirin, Penicillin</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 self-end md:self-auto">
+        <button onclick="openNewPatientModal()" id="btn-add-patient" class="text-xs px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition flex items-center gap-1.5 border border-slate-200">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>Add Patient</span>
+        </button>
+        <button onclick="quickShareActivePatient()" class="text-xs px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>Share 24h</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: VITALS TELEMETRY                   -->
+    <!-- ========================================== -->
+    <div id="view-vitals" class="space-y-6">
+      
+      <!-- Top Row: Input Card & Real-time Graph -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Quick Log Form -->
+        <div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
+                <span>Log Daily Vitals</span>
+              </h3>
+              <span class="text-[11px] text-slate-400">Nurse & Family</span>
+            </div>
+
+            <form id="vitals-form" onsubmit="submitVitals(event)" class="space-y-3.5">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Sys BP (mmHg)</label>
+                  <input type="number" id="vital-sys" required placeholder="e.g. 120" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Dia BP (mmHg)</label>
+                  <input type="number" id="vital-dia" required placeholder="e.g. 80" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Fasting Blood Sugar (mg/dL)</label>
+                <input type="number" step="0.1" id="vital-sugar" required placeholder="e.g. 98.5" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Clinical Notes</label>
+                <textarea id="vital-notes" rows="2" placeholder="e.g. Resting after morning walk, normal mood" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+              </div>
+
+              <button type="submit" id="btn-save-vitals" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow-sm transition flex items-center justify-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Record Vitals Log</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Interactive Chart.js Trend Visualizer -->
+        <div class="lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-sky-600"></i>
+                <span>Longitudinal Trends (BP & Blood Sugar)</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Historical telemetry for clinical evaluation</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="inline-flex items-center gap-1 text-sky-700 font-medium"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Systolic</span>
+              <span class="inline-flex items-center gap-1 text-slate-500 font-medium"><span class="w-2 h-2 rounded-full bg-slate-400"></span> Diastolic</span>
+              <span class="inline-flex items-center gap-1 text-rose-600 font-medium"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Sugar</span>
+            </div>
+          </div>
+
+          <div class="relative w-full flex-1 min-h-[240px]">
+            <canvas id="vitalsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Logs Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-500"></i>
+            <span>Telemetry History</span>
+          </h3>
+          <span class="text-xs text-slate-400 font-medium">Auto-sorted by latest entry</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">Date / Time</th>
+                <th class="py-3 px-4">Blood Pressure</th>
+                <th class="py-3 px-4">Fasting Sugar</th>
+                <th class="py-3 px-4">Notes</th>
+                <th class="py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody id="vitals-table-body" class="divide-y divide-slate-100">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: MEDICATION ENGINE                  -->
+    <!-- ========================================== -->
+    <div id="view-medications" class="hidden space-y-6">
+
+      <!-- Low Inventory Alert Banner (Dynamic) -->
+      <div id="med-low-inventory-banner" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+        <div class="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0 mt-0.5">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-bold text-amber-900">Low Medication Stock Warning</h3>
+          <p id="med-low-inventory-text" class="text-xs text-amber-700 mt-0.5">One or more prescriptions have less than 5 pills remaining. Please reorder immediately to avoid missing a scheduled dose.</p>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Prescription Schedule & Pill Counter</h3>
+          <p class="text-xs text-slate-400">Automated hourly dosage matching and inventory decrement</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="simulateHourlyCronJob()" class="text-xs px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition flex items-center gap-1.5 border border-slate-200">
+            <i data-lucide="clock" class="w-4 h-4 text-slate-600"></i>
+            <span>Simulate Hourly Job</span>
+          </button>
+          <button onclick="openNewMedModal()" id="btn-add-med" class="text-xs px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Add Medication</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Medications Grid -->
+      <div id="medications-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: DOCUMENT VAULT                     -->
+    <!-- ========================================== -->
+    <div id="view-documents" class="hidden space-y-6">
+
+      <!-- Upload Zone -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <i data-lucide="upload-cloud" class="w-4 h-4 text-emerald-600"></i>
+          <span>Upload Medical File to AWS S3</span>
+        </h3>
+
+        <form id="document-upload-form" onsubmit="uploadDocument(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-end">
+          <div class="sm:col-span-4">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Choose File (PDF, Image, Scan)</label>
+            <input type="file" id="doc-file-input" required class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-200 rounded-xl p-1 bg-slate-50">
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Document Category</label>
+            <select id="doc-type-select" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <option value="LAB_REPORT">LAB_REPORT (Blood, Urine, etc)</option>
+              <option value="PRESCRIPTION">PRESCRIPTION (Doctor Script)</option>
+              <option value="SCAN">SCAN (MRI, CT, X-Ray)</option>
+            </select>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Search Tags (Comma separated)</label>
+            <input type="text" id="doc-tags-input" placeholder="e.g. Cardiology, Dr. Evans" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <button type="submit" id="btn-upload-doc" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs shadow-sm transition flex items-center justify-center gap-1.5">
+              <i data-lucide="cloud" class="w-3.5 h-3.5"></i>
+              <span>Upload S3</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Document Cards Grid -->
+      <div id="documents-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: 24-HOUR EMERGENCY SHARING          -->
+    <!-- ========================================== -->
+    <div id="view-share" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm max-w-2xl mx-auto text-center">
+        <div class="w-14 h-14 bg-sky-100 text-sky-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="shield-alert" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">24-Hour Emergency Medical Access Link</h3>
+        <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+          Generates a time-limited UUID token that allows emergency rooms and visiting doctors to view patient allergies and verified documents without requiring any login credentials.
+        </p>
+
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button onclick="createShareLink()" id="btn-create-share-link" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+            <i data-lucide="link" class="w-4 h-4"></i>
+            <span>Generate 24-Hour Link</span>
+          </button>
+        </div>
+
+        <!-- Result Box -->
+        <div id="share-link-result" class="hidden mt-6 text-left bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-700">Active Public Access Link:</span>
+            <span id="share-expires-badge" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Expires in 24 Hours</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="text" id="share-url-input" readonly class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 font-mono select-all">
+            <button onclick="copyShareUrl()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition shrink-0 flex items-center gap-1">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+
+          <div class="pt-2 border-t border-slate-200 flex justify-end">
+            <button onclick="testPublicLinkModal()" class="text-xs text-sky-700 hover:text-sky-800 font-semibold flex items-center gap-1">
+              <span>Preview Doctor Emergency Portal</span>
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION BAR               -->
+  <!-- ========================================== -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-3 py-2 flex items-center justify-around shadow-lg">
+    <button onclick="switchTab('vitals')" id="mob-tab-vitals" class="mobile-tab-active flex flex-col items-center gap-1 text-[10px] font-medium text-slate-400">
+      <i data-lucide="activity" class="w-5 h-5"></i>
+      <span>Vitals</span>
+    </button>
+    <button onclick="switchTab('medications')" id="mob-tab-medications" class="flex flex-col items-center gap-1 text-[10px] font-medium text-slate-400">
+      <i data-lucide="pill" class="w-5 h-5"></i>
+      <span>Meds</span>
+    </button>
+    <button onclick="switchTab('documents')" id="mob-tab-documents" class="flex flex-col items-center gap-1 text-[10px] font-medium text-slate-400">
+      <i data-lucide="folder" class="w-5 h-5"></i>
+      <span>Vault</span>
+    </button>
+    <button onclick="switchTab('share')" id="mob-tab-share" class="flex flex-col items-center gap-1 text-[10px] font-medium text-slate-400">
+      <i data-lucide="share-2" class="w-5 h-5"></i>
+      <span>Share</span>
+    </button>
+  </div>
+
+  <!-- MODAL: ADD PATIENT -->
+  <div id="modal-patient" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-100">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-900">Add New Patient</h3>
+        <button onclick="closeModal('modal-patient')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="handleCreatePatient(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+          <input type="text" id="patient-new-name" required placeholder="e.g. Mary Vance (Mother)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Age</label>
+            <input type="number" id="patient-new-age" required placeholder="71" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Blood Group</label>
+            <input type="text" id="patient-new-blood" placeholder="O+, B+, A-" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Known Allergies</label>
+          <input type="text" id="patient-new-allergies" placeholder="e.g. Sulfa antibiotics, Latex" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-patient')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Save Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD MEDICATION -->
+  <div id="modal-medication" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-100">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-900">Add New Medication</h3>
+        <button onclick="closeModal('modal-medication')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="handleCreateMedication(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Medicine Name</label>
+          <input type="text" id="med-new-name" required placeholder="e.g. Atorvastatin (Cholesterol)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Dosage</label>
+          <input type="text" id="med-new-dosage" required placeholder="e.g. 20mg once at night" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Total Strips</label>
+            <input type="number" id="med-new-strips" value="2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Pill Count</label>
+            <input type="number" id="med-new-pills" required placeholder="e.g. 20 (Try 4 for alert!)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Reminder Time</label>
+          <input type="time" id="med-new-time" required value="08:00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-medication')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Add Medication</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DOCTOR PUBLIC PORTAL PREVIEW -->
+  <div id="modal-doctor-preview" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <h3 class="text-base font-bold text-slate-900">Emergency Medical Portal (Zero Auth Doctor View)</h3>
+        </div>
+        <button onclick="closeModal('modal-doctor-preview')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="py-4 space-y-4">
+        <div class="bg-sky-50 border border-sky-200 rounded-xl p-3.5 text-xs text-sky-800">
+          <strong>Doctor Mode:</strong> Viewing records validated via temporary 24h cryptographic token. No credentials or login required.
+        </div>
+
+        <div id="doctor-patient-info" class="space-y-2">
+          <!-- Populated by JS -->
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Verified Medical Documents:</h4>
+          <div id="doctor-doc-list" class="space-y-2">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic JS -->
+  <script src="/app.js"></script>
+</body>
+</html>
